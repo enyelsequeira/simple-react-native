@@ -8,6 +8,7 @@ module.exports = (api) => {
 			components: ["tamagui"],
 			config: "./tamagui.config.ts",
 		},
+		"react-native-reanimated/plugin",
 	]);
 
 	plugins.push("react-native-reanimated/plugin");

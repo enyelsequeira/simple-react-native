@@ -1,7 +1,13 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
-import { TouchableOpacity } from "react-native";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import Animated, {
+	useSharedValue,
+	useAnimatedStyle,
+	withTiming,
+} from "react-native-reanimated";
 import {
 	Button,
 	Card,
@@ -18,12 +24,15 @@ import {
 	styled,
 } from "tamagui";
 import MovieCard from "~/src/components/movie-card";
+import MovieInfoCarrousel from "~/src/components/movie-info-carrousel";
 import { useGetMovieInfo } from "~/src/queries/get-movie-info";
 import { useGetMovieRecommendations } from "~/src/queries/get-movie-recomendations";
 
+const baseImageUrl = "https://image.tmdb.org/t/p/w500";
+
 const StyledCard = styled(Card, {
-	elevate: true,
-	bordered: true,
+	elevation: 1,
+	borderWidth: 1,
 	borderRadius: 10,
 	backgroundColor: "white",
 });
@@ -40,7 +49,7 @@ const ReadMoreText = styled(Text, {
 	marginTop: "$2",
 });
 
-const Movie = () => {
+const Movie: React.FC = () => {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const { data, isLoading } = useGetMovieInfo({
@@ -50,6 +59,19 @@ const Movie = () => {
 		movieId: `${id}`,
 	});
 	const [expanded, setExpanded] = useState(false);
+
+	const opacity = useSharedValue(0);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		if (!isLoading && data) {
+			opacity.value = withTiming(1, { duration: 1000 });
+		}
+	}, [isLoading, data]);
+
+	const animatedStyle = useAnimatedStyle(() => ({
+		opacity: opacity.value,
+	}));
 
 	if (isLoading) {
 		return (
@@ -63,40 +85,31 @@ const Movie = () => {
 
 	const {
 		title,
-		poster_path,
-		backdrop_path,
 		vote_average,
 		runtime,
 		release_date,
 		overview,
 		genres,
 		credits,
+		images,
 	} = data;
 
-	const baseImageUrl = "https://image.tmdb.org/t/p/w500";
-
-	const truncateText = (text: string, maxLength: number) => {
+	const truncateText = (text: string, maxLength: number): string => {
 		if (text.length <= maxLength) return text;
-		return `${text.substr(0, maxLength)}...`;
+		return `${text.slice(0, maxLength)}...`;
 	};
 
 	return (
 		<>
 			<Stack.Screen
 				options={{
-					title: title,
+					title: title || "Movie Details",
 					headerStyle: { backgroundColor: "#f0f0f0" },
 				}}
 			/>
 			<ScrollView backgroundColor="$gray2">
-				<YStack flex={1}>
-					<Image
-						source={{ uri: `${baseImageUrl}${backdrop_path || poster_path}` }}
-						width="100%"
-						height={250}
-						resizeMode="cover"
-						alt={`${title} Poster`}
-					/>
+				<Animated.View style={animatedStyle}>
+					<MovieInfoCarrousel images={images.backdrops.slice(0, 5)} />
 					<YStack padding="$4" space="$4">
 						<XStack justifyContent="space-between" alignItems="center">
 							<H1 color="$gray12" fontSize={24} fontWeight="bold">
@@ -113,7 +126,7 @@ const Movie = () => {
 						</XStack>
 
 						<XStack space="$4" justifyContent="space-around">
-							<StyledCard elevate>
+							<StyledCard>
 								<IconText>
 									<MaterialIcons name="star" size={20} color="#FFD700" />
 									<Text color="$gray11" fontSize={16} fontWeight="bold">
@@ -121,7 +134,7 @@ const Movie = () => {
 									</Text>
 								</IconText>
 							</StyledCard>
-							<StyledCard elevate>
+							<StyledCard>
 								<IconText>
 									<MaterialIcons name="access-time" size={20} color="$gray11" />
 									<Text color="$gray11" fontSize={16} fontWeight="bold">
@@ -129,7 +142,7 @@ const Movie = () => {
 									</Text>
 								</IconText>
 							</StyledCard>
-							<StyledCard elevate>
+							<StyledCard>
 								<IconText>
 									<MaterialIcons name="event" size={20} color="$gray11" />
 									<Text color="$gray11" fontSize={16} fontWeight="bold">
@@ -152,11 +165,11 @@ const Movie = () => {
 								{expanded ? overview : truncateText(overview, 200)}
 							</Paragraph>
 							{overview.length > 200 && (
-								<TouchableOpacity onPress={() => setExpanded(!expanded)}>
+								<Pressable onPress={() => setExpanded(!expanded)}>
 									<ReadMoreText>
 										{expanded ? "Read Less" : "Read More"}
 									</ReadMoreText>
-								</TouchableOpacity>
+								</Pressable>
 							)}
 						</YStack>
 
@@ -191,11 +204,20 @@ const Movie = () => {
 							<ScrollView horizontal showsHorizontalScrollIndicator={false}>
 								<XStack space="$2">
 									{credits.cast.slice(0, 10).map((actor) => (
-										<StyledCard key={actor.id} width={120} marginRight="$2">
+										<StyledCard
+											key={actor.id}
+											width={120}
+											marginRight="$2"
+											onPress={() => {
+												router.push(`/cast/${actor.id}`);
+											}}
+										>
 											<YStack space="$1" alignItems="center">
 												<Image
 													source={{
-														uri: `${baseImageUrl}${actor.profile_path}`,
+														uri: actor.profile_path
+															? `${baseImageUrl}${actor.profile_path}`
+															: "https://via.placeholder.com/80",
 													}}
 													width={80}
 													height={80}
@@ -244,7 +266,11 @@ const Movie = () => {
 											<MovieCard
 												key={movie.id}
 												title={movie.title}
-												imageSrc={`${baseImageUrl}${movie.poster_path}`}
+												imageSrc={
+													movie.poster_path
+														? `${baseImageUrl}${movie.poster_path}`
+														: "https://via.placeholder.com/500x750"
+												}
 												releaseYear={new Date(movie.release_date)
 													.getFullYear()
 													.toString()}
@@ -257,7 +283,7 @@ const Movie = () => {
 							</YStack>
 						)}
 					</YStack>
-				</YStack>
+				</Animated.View>
 			</ScrollView>
 		</>
 	);
