@@ -2,7 +2,7 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { TamaguiProvider } from "tamagui";
+import { PortalProvider, TamaguiProvider } from "tamagui";
 
 import { useReactQueryDevTools } from "@dev-plugins/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -31,20 +31,13 @@ export default function RootLayout() {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<TamaguiProvider config={config}>
-				<GestureHandlerRootView style={{ flex: 1 }}>
-					<Stack>
-						<Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-					</Stack>
-					{/*<Drawer drawerContent={CustomDrawerContent}>*/}
-					{/*	<Drawer.Screen*/}
-					{/*		name="index"*/}
-					{/*		options={{*/}
-					{/*			title: "Home",*/}
-					{/*			drawerLabel: "Home",*/}
-					{/*		}}*/}
-					{/*	/>*/}
-					{/*</Drawer>*/}
-				</GestureHandlerRootView>
+				<PortalProvider>
+					<GestureHandlerRootView style={{ flex: 1 }}>
+						<Stack>
+							<Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+						</Stack>
+					</GestureHandlerRootView>
+				</PortalProvider>
 			</TamaguiProvider>
 		</QueryClientProvider>
 	);

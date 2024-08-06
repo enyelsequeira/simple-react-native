@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Modal, Pressable } from "react-native";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
@@ -50,6 +50,8 @@ const ReadMoreText = styled(Text, {
 });
 
 const Movie: React.FC = () => {
+	const [modalOpen, setModalOpen] = useState(false);
+
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const { data, isLoading } = useGetMovieInfo({
@@ -251,6 +253,7 @@ const Movie: React.FC = () => {
 							backgroundColor="$blue10"
 							color="white"
 							fontWeight="bold"
+							onPress={() => setModalOpen(!modalOpen)}
 						>
 							Book Tickets
 						</Button>
@@ -285,6 +288,9 @@ const Movie: React.FC = () => {
 					</YStack>
 				</Animated.View>
 			</ScrollView>
+			<Modal visible={modalOpen}>
+				<Text>DEMO</Text>
+			</Modal>
 		</>
 	);
 };

@@ -1,3 +1,5 @@
+import type { Movie } from "~/src/constants/types";
+
 export const APIKEY = process.env.EXPO_PUBLIC_API_KEY;
 
 import axios, { type AxiosInstance } from "axios";
@@ -34,4 +36,10 @@ export const getMovieAPI = (): AxiosInstance => {
 		throw new Error("No Movies API found");
 	}
 	return MoviesAPI;
+};
+
+export const keyExtractor = (item: Movie, index: number) => {
+	const baseKey = `${item.id}-${item.title}`;
+	const dateKey = item.release_date ? `-${item.release_date}` : "";
+	return `${baseKey}${dateKey}-${index}`;
 };
